@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Url;
+use App\Jobs\SendUrlToRabbitMQ;
+use Illuminate\Support\Facades\Log;
 
 class UrlController extends Controller
 {
@@ -33,6 +35,19 @@ class UrlController extends Controller
             'realURL' => $request->input('realURL'),
             'shortURL' => $shortURL
         ]);
+
+        $message = [
+            'event' => 'url_created',
+            'data' => [
+                'id' => $url->id,
+                'real_url' => $url->realURL,
+                'short_url' => $url->shortURL,
+                'timestamp' => now()->toDateTimeString(),
+                'action' => 'create'
+            ]
+        ];
+
+        SendUrlToRabbitMQ::dispatch($message);
 
         return response()->json([
             'id' => $url->id,
@@ -65,6 +80,23 @@ class UrlController extends Controller
         }
 
         $url->delete();
+
+        $message = [
+            'event' => 'url_deleted',
+            'data' => [
+                'id' => $url->id,
+                'real_url' => $url->realURL,
+                'short_url' => $url->shortURL,
+                'timestamp' => now()->toDateTimeString(),
+                'action' => 'delete'
+            ]
+        ];
+
+        // logiraj $url varijablu
+        Log::info($url);
+
+        SendUrlToRabbitMQ::dispatch($message);
+
 
         return response()->json([
             'status' => 'success',
