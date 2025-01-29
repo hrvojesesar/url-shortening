@@ -12,7 +12,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 
 class SendUrlToRabbitMQ implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected $messageData;
 
@@ -34,15 +34,19 @@ class SendUrlToRabbitMQ implements ShouldQueue
         $channel = $connection->channel();
 
         $channel->exchange_declare('url_events', 'direct', false, true, false);
-        $channel->queue_declare('url_created_queue', false, true, false, false);
-        $channel->queue_bind('url_created_queue', 'url_events', 'url.created');
+
+        $channel->queue_declare('url_queue', false, true, false, false);
+
+        $routingKey = 'url.' . ($this->messageData['data']['action'] ?? 'unknown');
+
+        $channel->queue_bind('url_queue', 'url_events', $routingKey);
 
         $msg = new AMQPMessage(
             json_encode($this->messageData),
             ['delivery_mode' => AMQPMessage::DELIVERY_MODE_PERSISTENT]
         );
 
-        $channel->basic_publish($msg, 'url_events', 'url.created');
+        $channel->basic_publish($msg, 'url_events', $routingKey);
 
         $channel->close();
         $connection->close();
