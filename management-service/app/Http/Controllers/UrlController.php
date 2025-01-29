@@ -53,4 +53,22 @@ class UrlController extends Controller
 
         return redirect($url->realURL);
     }
+
+    public function deleteURL($id)
+    {
+        $url = Url::where('id', $id)->first();
+        if (!$url) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'URL not found',
+            ]);
+        }
+
+        $url->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'URL deleted',
+        ]);
+    }
 }
