@@ -8,5 +8,4 @@ Route::get('/', function () {
 });
 
 Route::post('/create-short-url', [UrlController::class, 'createShortURL']);
-Route::get('/{shortURL}', [UrlController::class, 'redirectToRealURL']);
 Route::delete('/delete-url/{id}', [UrlController::class, 'deleteURL']);

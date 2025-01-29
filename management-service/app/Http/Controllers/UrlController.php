@@ -56,19 +56,6 @@ class UrlController extends Controller
         ]);
     }
 
-    public function redirectToRealURL($shortURL)
-    {
-        $url = Url::where('shortURL', $shortURL)->first();
-        if (!$url) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'URL not found',
-            ]);
-        }
-
-        return redirect($url->realURL);
-    }
-
     public function deleteURL($id)
     {
         $url = Url::where('id', $id)->first();
@@ -91,9 +78,6 @@ class UrlController extends Controller
                 'action' => 'delete'
             ]
         ];
-
-        // logiraj $url varijablu
-        Log::info($url);
 
         SendUrlToRabbitMQ::dispatch($message);
 
