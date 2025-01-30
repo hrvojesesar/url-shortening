@@ -1,0 +1,155 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: url_shortener
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: laravel
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - url-shortener-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: laravel-phpmyadmin
+    ports:
+      - 8080:80
+    environment:
+      PMA_HOST: mysql
+      MYSQL_ROOT_PASSWORD: root
+    depends_on:
+      - mysql
+    networks:
+      - url-shortener-network
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - url-shortener-network
+
+  redisinsight:
+    image: redislabs/redisinsight:latest
+    container_name: redisinsight
+    restart: always
+    depends_on:
+      - redis
+    ports:
+      - "5540:5540"
+    volumes:
+      - redis-insight:/data
+    networks:
+      - url-shortener-network
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"  # Port za RabbitMQ
+      - "15672:15672"  # Port za RabbitMQ Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - url-shortener-network
+
+  management_service:
+    build:
+      context: ./management-service
+      dockerfile: Dockerfile
+    container_name: management_service
+    ports:
+      - "8000:8000"  # Port za Management Service
+    volumes:
+      - ./management-service:/var/www/html
+    depends_on:
+      - mysql
+      - rabbitmq
+    command: >
+      sh -c "
+        composer update &&
+        cp .env.example .env &&
+        sed -i 's#DB_CONNECTION=.*#DB_CONNECTION=mysql#' .env &&
+        sed -i 's#DB_HOST=.*#DB_HOST=mysql#' .env &&
+        sed -i 's#DB_PORT=.*#DB_PORT=3306#' .env &&
+        sed -i 's#DB_DATABASE=.*#DB_DATABASE=url_shortener#' .env &&
+        sed -i 's#DB_USERNAME=.*#DB_USERNAME=laravel#' .env &&
+        sed -i 's#DB_PASSWORD=.*#DB_PASSWORD=laravel#' .env &&
+        sed -i 's#SESSION_DRIVER=.*#SESSION_DRIVER=file#' .env &&
+        sed -i 's#REDIS_CLIENT=.*#REDIS_CLIENT=predis#' .env &&
+        sed -i 's#REDIS_HOST=.*#REDIS_HOST=redis#' .env &&
+        sed -i 's#REDIS_PORT=.*#REDIS_PORT=6379#' .env &&
+        echo 'QUEUE_CONNECTION=rabbitmq' >> .env &&
+        echo 'RABBITMQ_HOST=rabbitmq' >> .env &&
+        echo 'RABBITMQ_PORT=5672' >> .env &&
+        echo 'RABBITMQ_USER=guest' >> .env &&
+        echo 'RABBITMQ_PASSWORD=guest' >> .env &&
+        echo 'RABBITMQ_VHOST=/' >> .env &&
+        php artisan key:generate &&
+        php artisan serve --host=0.0.0.0 --port=8000 &
+        php artisan queue:work
+      "
+    networks:
+      - url-shortener-network
+
+  redirection_service:
+    build:
+      context: ./redirection-service
+      dockerfile: Dockerfile
+    container_name: redirection_service
+    ports:
+      - "8001:8001"  # Port za Redirection Service
+    volumes:
+      - ./redirection-service:/var/www/html
+    depends_on:
+      - mysql
+      - redis
+      - rabbitmq
+    command: >
+      sh -c "
+        composer update &&
+        cp .env.example .env &&
+        sed -i 's#DB_CONNECTION=.*#DB_CONNECTION=mysql#' .env &&
+        sed -i 's#DB_HOST=.*#DB_HOST=mysql#' .env &&
+        sed -i 's#DB_PORT=.*#DB_PORT=3306#' .env &&
+        sed -i 's#DB_DATABASE=.*#DB_DATABASE=url_shortener#' .env &&
+        sed -i 's#DB_USERNAME=.*#DB_USERNAME=laravel#' .env &&
+        sed -i 's#DB_PASSWORD=.*#DB_PASSWORD=laravel#' .env &&
+        sed -i 's#SESSION_DRIVER=.*#SESSION_DRIVER=file#' .env &&
+        sed -i 's#REDIS_CLIENT=.*#REDIS_CLIENT=predis#' .env &&
+        sed -i 's#REDIS_HOST=.*#REDIS_HOST=redis#' .env &&
+        sed -i 's#REDIS_PORT=.*#REDIS_PORT=6379#' .env &&
+        echo 'QUEUE_CONNECTION=rabbitmq' >> .env &&
+        echo 'RABBITMQ_HOST=rabbitmq' >> .env &&
+        echo 'RABBITMQ_PORT=5672' >> .env &&
+        echo 'RABBITMQ_USER=guest' >> .env &&
+        echo 'RABBITMQ_PASSWORD=guest' >> .env &&
+        echo 'RABBITMQ_VHOST=/' >> .env &&
+        php artisan key:generate &&
+        php artisan serve --host=0.0.0.0 --port=8001 &
+        php artisan rabbitmq:consume
+      "
+    networks:
+      - url-shortener-network
+
+networks:
+  url-shortener-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  redis_data:
+    driver: local
+  redis-insight:
