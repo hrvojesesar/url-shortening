@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Http\Response;
 
 
 
@@ -22,11 +24,22 @@ Route::get('/', function () {
 
 
 Route::get('/{shortURL}', function ($shortURL) {
+    $rateLimitKey = 'shortURL:' . $shortURL;
+
+    if (RateLimiter::tooManyAttempts($rateLimitKey, 10)) {
+        return response()->json([
+            'error' => 'Rate limit exceeded. Please try again later.'
+        ], Response::HTTP_TOO_MANY_REQUESTS);
+    }
+    RateLimiter::hit($rateLimitKey, 120);
+
     $realURL = Redis::get($shortURL);
 
     if ($realURL) {
-        return redirect()->to($realURL, 302);
+        return redirect()->to($realURL, Response::HTTP_FOUND);
     }
 
-    return response()->json(['error' => 'Not Found'], 404);
+    return response()->json([
+        'error' => 'Short URL not found.'
+    ], Response::HTTP_NOT_FOUND);
 });
