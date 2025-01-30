@@ -57,8 +57,8 @@ services:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
-      - "5672:5672"  # Port za RabbitMQ
-      - "15672:15672"  # Port za RabbitMQ Management UI
+      - "5672:5672"  
+      - "15672:15672" 
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -71,7 +71,7 @@ services:
       dockerfile: Dockerfile
     container_name: management_service
     ports:
-      - "8000:8000"  # Port za Management Service
+      - "8000:8000" 
     volumes:
       - ./management-service:/var/www/html
     depends_on:
@@ -110,7 +110,7 @@ services:
       dockerfile: Dockerfile
     container_name: redirection_service
     ports:
-      - "8001:8001"  # Port za Redirection Service
+      - "8001:8001" 
     volumes:
       - ./redirection-service:/var/www/html
     depends_on:
