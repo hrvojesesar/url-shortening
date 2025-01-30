@@ -123,4 +123,5 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'driver' => env('QUEUE_CONNECTION', 'sync'),
 ];
