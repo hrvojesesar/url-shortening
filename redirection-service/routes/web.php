@@ -18,3 +18,15 @@ Route::get('/', function () {
 //         return 'Povezivanje s Redisom nije uspjelo: ' . $e->getMessage();
 //     }
 // });
+
+
+
+Route::get('/{shortURL}', function ($shortURL) {
+    $realURL = Redis::get($shortURL);
+
+    if ($realURL) {
+        return redirect()->to($realURL, 302);
+    }
+
+    return response()->json(['error' => 'Not Found'], 404);
+});

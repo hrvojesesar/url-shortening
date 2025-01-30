@@ -52,7 +52,7 @@ class UrlController extends Controller
         return response()->json([
             'id' => $url->id,
             'realURL' => $url->realURL,
-            'shortURL' => url('/') . '/' . $url->shortURL,
+            'shortURL' => url('http://localhost:8001') . '/' . $url->shortURL,
         ]);
     }
 
