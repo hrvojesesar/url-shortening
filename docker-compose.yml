@@ -79,7 +79,7 @@ services:
       - rabbitmq
     command: >
       sh -c "
-        composer update &&
+        composer install &&
         cp .env.example .env &&
         sed -i 's#DB_CONNECTION=.*#DB_CONNECTION=mysql#' .env &&
         sed -i 's#DB_HOST=.*#DB_HOST=mysql#' .env &&
@@ -119,7 +119,7 @@ services:
       - rabbitmq
     command: >
       sh -c "
-        composer update &&
+        composer install &&
         cp .env.example .env &&
         sed -i 's#DB_CONNECTION=.*#DB_CONNECTION=mysql#' .env &&
         sed -i 's#DB_HOST=.*#DB_HOST=mysql#' .env &&
