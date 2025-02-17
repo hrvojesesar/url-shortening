@@ -100,6 +100,7 @@ services:
         echo 'RABBITMQ_USER=guest' >> .env &&
         echo 'RABBITMQ_PASSWORD=guest' >> .env &&
         echo 'RABBITMQ_VHOST=/' >> .env &&
+        echo 'RABBITMQ_QUEUE=url_queue' >> .env &&
         php artisan key:generate &&
         php artisan serve --host=0.0.0.0 --port=8000 &
         php artisan queue:work
@@ -139,6 +140,7 @@ services:
         echo 'RABBITMQ_USER=guest' >> .env &&
         echo 'RABBITMQ_PASSWORD=guest' >> .env &&
         echo 'RABBITMQ_VHOST=/' >> .env &&
+        echo 'RABBITMQ_QUEUE=url_queue' >> .env &&
         php artisan key:generate &&
         php artisan serve --host=0.0.0.0 --port=8001 &
         php artisan rabbitmq:consume
